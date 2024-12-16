@@ -1,0 +1,5 @@
+<?php
+
+$MESS["NC_UNLOADING_B24_UNSTEP_BEFORE"] = "Модуль";
+$MESS["NC_UNLOADING_B24_UNSTEP_AFTER"] = "удален";
+$MESS["NC_UNLOADING_B24_UNSTEP_SUBMIT_BACK"] = "Вернуться в список";

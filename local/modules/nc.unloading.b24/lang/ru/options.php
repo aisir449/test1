@@ -1,0 +1,9 @@
+<?php
+
+$MESS["NC_UNLOADING_B24_OPTIONS_TAB_SITE"] = "Настройки сайта";
+$MESS["NC_UNLOADING_B24_OPTIONS_MODULE_ON"] = "Включить модуль";
+$MESS["NC_UNLOADING_B24_OPTIONS_PORTAL_DOMAIN"] = "Домен портала";
+
+$MESS["NC_UNLOADING_B24_OPTIONS_INPUT_APPLY"] = "Сохранить";
+$MESS["NC_UNLOADING_B24_OPTIONS_INPUT_DEFAULT"] = "Вернуть дефолтные";
+
