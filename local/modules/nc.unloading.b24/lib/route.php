@@ -55,9 +55,13 @@ class Route
                 "NAME" => $lead['NAME'],
                 "LAST_NAME" => $lead['LAST_NAME'],
                 "SECOND_NAME" => $lead['SECOND_NAME'],
+                "SOURCE_ID" => $lead['SOURCE_ID'],
+                "SOURCE_DESCRIPTION" => $lead['SOURCE_DESCRIPTION'],
                 "POST" => $lead['POST'],
                 "ADDRESS" => $lead['ADDRESS'],
                 "STATUS_ID" => $lead['STATUS_ID'],
+                "STATUS_DESCRIPTION" => $lead['STATUS_DESCRIPTION'],
+                "COMMENTS" => $lead['COMMENTS'],
                 "OPENED" => $lead['OPENED'],
                 "ASSIGNED_BY_ID" => '1',
                 "CURRENCY_ID" => $lead['CURRENCY_ID'],
@@ -72,14 +76,20 @@ class Route
         $deals = $this->sendRequest($this->portal_domain, '/crm.deal.list', 'meq70aww95tlhjt2', '1');
         foreach ($deals['result'] as $key => $deal) {
             //\Bitrix\Main\Diag\Debug::dumpToFile($deal['TITLE'], "deal", "/log.txt");
-            $arFields =[
+            $arFields = [
                 "TITLE" => $deal['TITLE'],
                 "TYPE_ID" => $deal['TYPE_ID'],
                 "STAGE_ID" => $deal['STAGE_ID'],
-                "COMPANY_ID" => $deal['COMPANY_ID'],
+                //"COMPANY_ID" => $deal['COMPANY_ID'],
                 "OPENED" => $deal['OPENED'],
-                "ASSIGNED_BY_ID" => $deal['ASSIGNED_BY_ID'],
-                "CREATED_BY_ID" => $deal['CREATED_BY_ID']
+                "PROBABILITY" => $deal['PROBABILITY'],
+                "CURRENCY_ID" => $deal['CURRENCY_ID'],
+                "OPPORTUNITY" => $deal['OPPORTUNITY'],
+                "IS_MANUAL_OPPORTUNITY" => $deal['IS_MANUAL_OPPORTUNITY'],
+                "TAX_VALUE" => $deal['TAX_VALUE'],
+                //"ASSIGNED_BY_ID" => $deal['ASSIGNED_BY_ID'],
+                //"CREATED_BY_ID" => $deal['CREATED_BY_ID'],
+                //"DATE_CREATE" => $deal['DATE_CREATE'],
             ];
 
             $options = ['CURRENT_USER' => 1]; //из под админа
