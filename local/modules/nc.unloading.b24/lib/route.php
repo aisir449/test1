@@ -39,8 +39,92 @@ class Route
             $this->transferCompanies();
             $this->transferLeads();
             $this->transferDeals();
+
+            $this->contactToCompanyRestore();
 		}
 	}
+
+    public function contactToCompanyRestore()
+    {
+        $contacts = $this->sendRequest($this->portal_domain, '/crm.contact.list', 'meq70aww95tlhjt2', '1');
+        $companies = $this->sendRequest($this->portal_domain, '/crm.company.list', 'meq70aww95tlhjt2', '1');
+        foreach ($contacts['result'] as $key => $contact) {
+            if (!empty($contact["COMPANY_ID"])) {
+                foreach ($companies as $ind => $company) {
+                    if ($contact["COMPANY_ID"] == $company["ID"]) {
+                        // получаем айди контакта в срм2 по уникальным полям
+                        $contactResult = \CCrmContact::GetListEx(
+                            [
+                                'SOURCE_ID' => 'DESC'
+                            ],
+                            [
+                                'NAME' => $contact['NAME'],
+                                'SECOND_NAME' => $contact['SECOND_NAME'],
+                                'LAST_NAME' => $contact['LAST_NAME'],
+                                'POST' => $contact['POST'],
+                                'CHECK_PERMISSIONS' => 'N'
+                            ],
+                            false,
+                            false,
+                            [
+                                'ID'
+                            ]
+                        );
+
+                        if ($arContact = $contactResult->fetch()) {
+                            // $arContact["ID"]
+                            $companyResult = \CCrmCompany::GetListEx(
+                                [
+                                    'SOURCE_ID' => 'DESC'
+                                ],
+                                [
+                                    'TITLE' => $company['TITLE'],
+                                    'CHECK_PERMISSIONS' => 'N'
+                                ],
+                                false,
+                                false,
+                                [
+                                    'ID'
+                                ]
+                            );
+
+                            if ($arCompany = $companyResult->fetch()) {
+                                // $arCompany["ID"]
+                                $bCheckRight = false;
+                                $contactId = $arContact["ID"];
+                                $contactFields = [
+                                    "COMPANY_ID" => $arCompany["ID"],
+                                ];
+                                $contactEntity = new \CCrmContact($bCheckRight);
+                                $isUpdateSuccess = $contactEntity->Update(
+                                    $contactId,
+                                    $contactFields,
+                                    $bCompare = true,
+                                    $arOptions = [
+                                        'CURRENT_USER' => \CCrmSecurityHelper::GetCurrentUserID(),
+                                        'IS_SYSTEM_ACTION' => false,
+                                        'ENABLE_DUP_INDEX_INVALIDATION' => true,
+                                        'REGISTER_SONET_EVENT' => false,
+                                        'DISABLE_USER_FIELD_CHECK' => false,
+                                        'DISABLE_REQUIRED_USER_FIELD_CHECK' => false,
+                                    ]
+                                );
+                                if (!$isUpdateSuccess) {
+                                    /**
+                                     * Произошла ошибка при обновлении контакта, посмотреть ее можно
+                                     * через любой из способов ниже:
+                                     * 1. $contactFields['RESULT_MESSAGE']
+                                     * 2. $contactEntity->LAST_ERROR
+                                     */
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     public function transferLeads()
     {
