@@ -40,19 +40,195 @@ class Route
             $this->transferLeads();
             $this->transferDeals();
 
-            $this->contactToCompanyRestore();
+            $this->contactToCompanyRestoreRelationship();
+            $this->companyToDealRestoreRelationship();
+            $this->contactToDealRestoreRelationship();
 		}
 	}
 
-    public function contactToCompanyRestore()
+    public function contactToDealRestoreRelationship()
+    {
+        $deals = $this->sendRequest($this->portal_domain, '/crm.deal.list', 'meq70aww95tlhjt2', '1');
+        $contacts = $this->sendRequest($this->portal_domain, '/crm.contact.list', 'meq70aww95tlhjt2', '1');
+        foreach ($deals['result'] as $key => $deal) {
+            if (!empty($deal["CONTACT_ID"])) {
+                foreach ($contacts['result'] as $ind => $contact) {
+                    if ($deal["CONTACT_ID"] == $contact["ID"]) {
+                        $dealResult = \CCrmDeal::GetListEx(
+                            [
+                                'SOURCE_ID' => 'DESC'
+                            ],
+                            [
+                                'TITLE' => $deal['TITLE'],
+                                'TYPE_ID' => $deal['TYPE_ID'],
+                                'STAGE_ID' => $deal['STAGE_ID'],
+                                'OPPORTUNITY' => $deal['OPPORTUNITY'],
+                                'CHECK_PERMISSIONS' => 'N'
+                            ],
+                            false,
+                            false,
+                            [
+                                'ID'
+                            ]
+                        );
+
+                        if ($arDeal = $dealResult->fetch()) {
+                            //\Bitrix\Main\Diag\Debug::dumpToFile($arDeal["ID"], "arDeal ID", "/log.txt");
+                            $contactResult = \CCrmContact::GetListEx(
+                                [
+                                    'SOURCE_ID' => 'DESC'
+                                ],
+                                [
+                                    'NAME' => $contact['NAME'],
+                                    'SECOND_NAME' => $contact['SECOND_NAME'],
+                                    'LAST_NAME' => $contact['LAST_NAME'],
+                                    'POST' => $contact['POST'],
+                                    'CHECK_PERMISSIONS' => 'N'
+                                ],
+                                false,
+                                false,
+                                [
+                                    'ID'
+                                ]
+                            );
+
+                            if ($arContact = $contactResult->fetch()) {
+                                //\Bitrix\Main\Diag\Debug::dumpToFile($arContact["ID"], "arContact ID", "/log.txt");
+                                $bCheckRight = false;
+                                $dealId = $arDeal['ID'];
+                                $dealFields = [
+                                    'CONTACT_ID'   => $arContact["ID"],
+                                ];
+                                $entityObject = new \CCrmDeal($bCheckRight);
+                                $isUpdateSuccess = $entityObject->Update(
+                                    $dealId,
+                                    $dealFields,
+                                    $bCompare = true,
+                                    $bUpdateSearch = true,
+                                    $arOptions = [
+                                        'CURRENT_USER' => \CCrmSecurityHelper::GetCurrentUserID(),
+                                        'IS_SYSTEM_ACTION' => false,
+                                        'REGISTER_SONET_EVENT' => false,
+                                        'ENABLE_SYSTEM_EVENTS' => true,
+                                        'SYNCHRONIZE_STAGE_SEMANTICS' => true,
+                                        'DISABLE_USER_FIELD_CHECK' => false,
+                                        'DISABLE_REQUIRED_USER_FIELD_CHECK' => false,
+                                    ]
+                                );
+
+                                if (!$isUpdateSuccess) {
+                                    /**
+                                     * Произошла ошибка при обновлении элемента, посмотреть ее можно
+                                     * через любой из способов ниже:
+                                     * 1. $entityFields['RESULT_MESSAGE']
+                                     * 2. $entityObject->LAST_ERROR
+                                     */
+                                    //\Bitrix\Main\Diag\Debug::dumpToFile($entityFields['RESULT_MESSAGE'], "RESULT_MESSAGE", "/log.txt");
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    public function companyToDealRestoreRelationship()
+    {
+        $deals = $this->sendRequest($this->portal_domain, '/crm.deal.list', 'meq70aww95tlhjt2', '1');
+        $companies = $this->sendRequest($this->portal_domain, '/crm.company.list', 'meq70aww95tlhjt2', '1');
+        foreach ($deals['result'] as $key => $deal) {
+            if (!empty($deal["COMPANY_ID"])) {
+                foreach ($companies['result'] as $ind => $company) {
+                    if ($deal["COMPANY_ID"] == $company["ID"]) {
+                        $dealResult = \CCrmDeal::GetListEx(
+                            [
+                                'SOURCE_ID' => 'DESC'
+                            ],
+                            [
+                                'TITLE' => $deal['TITLE'],
+                                'TYPE_ID' => $deal['TYPE_ID'],
+                                'STAGE_ID' => $deal['STAGE_ID'],
+                                'OPPORTUNITY' => $deal['OPPORTUNITY'],
+                                'CHECK_PERMISSIONS' => 'N'
+                            ],
+                            false,
+                            false,
+                            [
+                                'ID'
+                            ]
+                        );
+
+                        if ($arDeal = $dealResult->fetch()) {
+                            //\Bitrix\Main\Diag\Debug::dumpToFile($arDeal["ID"], "arDeal ID","/log.txt");
+                            //////////////
+                            $companyResult = \CCrmCompany::GetListEx(
+                                [
+                                    'SOURCE_ID' => 'DESC'
+                                ],
+                                [
+                                    'TITLE' => $company['TITLE'],
+                                    'CHECK_PERMISSIONS' => 'N'
+                                ],
+                                false,
+                                false,
+                                [
+                                    'ID'
+                                ]
+                            );
+
+                            if ($arCompany = $companyResult->fetch()) {
+                                // $arCompany["ID"]
+                                //\Bitrix\Main\Diag\Debug::dumpToFile($arCompany["ID"], "arCompany ID","/log.txt");
+                                $bCheckRight = false;
+                                $dealId = $arDeal['ID'];
+                                $dealFields = [
+                                    'COMPANY_ID'   => $arCompany["ID"],
+                                ];
+                                $entityObject = new \CCrmDeal( $bCheckRight );
+                                $isUpdateSuccess = $entityObject->Update(
+                                    $dealId,
+                                    $dealFields,
+                                    $bCompare = true,
+                                    $bUpdateSearch = true,
+                                    $arOptions = [
+                                        'CURRENT_USER' => \CCrmSecurityHelper::GetCurrentUserID(),
+                                        'IS_SYSTEM_ACTION' => false,
+                                        'REGISTER_SONET_EVENT' => false,
+                                        'ENABLE_SYSTEM_EVENTS' => true,
+                                        'SYNCHRONIZE_STAGE_SEMANTICS' => true,
+                                        'DISABLE_USER_FIELD_CHECK' => false,
+                                        'DISABLE_REQUIRED_USER_FIELD_CHECK' => false,
+                                    ]
+                                );
+
+                                if (!$isUpdateSuccess) {
+                                    /**
+                                     * Произошла ошибка при обновлении элемента, посмотреть ее можно
+                                     * через любой из способов ниже:
+                                     * 1. $entityFields['RESULT_MESSAGE']
+                                     * 2. $entityObject->LAST_ERROR
+                                     */
+                                    //\Bitrix\Main\Diag\Debug::dumpToFile($entityFields['RESULT_MESSAGE'], "RESULT_MESSAGE", "/log.txt");
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    public function contactToCompanyRestoreRelationship()
     {
         $contacts = $this->sendRequest($this->portal_domain, '/crm.contact.list', 'meq70aww95tlhjt2', '1');
         $companies = $this->sendRequest($this->portal_domain, '/crm.company.list', 'meq70aww95tlhjt2', '1');
         foreach ($contacts['result'] as $key => $contact) {
             if (!empty($contact["COMPANY_ID"])) {
-                foreach ($companies as $ind => $company) {
+                foreach ($companies['result'] as $ind => $company) {
                     if ($contact["COMPANY_ID"] == $company["ID"]) {
                         // получаем айди контакта в срм2 по уникальным полям
+                        //Bitrix\Main\Diag\Debug::dumpToFile($contact["COMPANY_ID"], "COMPANY_ID","/log.txt");
                         $contactResult = \CCrmContact::GetListEx(
                             [
                                 'SOURCE_ID' => 'DESC'
@@ -73,6 +249,7 @@ class Route
 
                         if ($arContact = $contactResult->fetch()) {
                             // $arContact["ID"]
+                            //\Bitrix\Main\Diag\Debug::dumpToFile($arContact["ID"], "arContact ID","/log.txt");
                             $companyResult = \CCrmCompany::GetListEx(
                                 [
                                     'SOURCE_ID' => 'DESC'
@@ -90,6 +267,7 @@ class Route
 
                             if ($arCompany = $companyResult->fetch()) {
                                 // $arCompany["ID"]
+                                //\Bitrix\Main\Diag\Debug::dumpToFile($arCompany["ID"], "arCompany ID","/log.txt");
                                 $bCheckRight = false;
                                 $contactId = $arContact["ID"];
                                 $contactFields = [
@@ -109,14 +287,16 @@ class Route
                                         'DISABLE_REQUIRED_USER_FIELD_CHECK' => false,
                                     ]
                                 );
-                                if (!$isUpdateSuccess) {
-                                    /**
-                                     * Произошла ошибка при обновлении контакта, посмотреть ее можно
-                                     * через любой из способов ниже:
-                                     * 1. $contactFields['RESULT_MESSAGE']
-                                     * 2. $contactEntity->LAST_ERROR
-                                     */
-                                }
+//                                if (!$isUpdateSuccess) {
+//                                    /**
+//                                     * Произошла ошибка при обновлении контакта, посмотреть ее можно
+//                                     * через любой из способов ниже:
+//                                     * 1. $contactFields['RESULT_MESSAGE']
+//                                     * 2. $contactEntity->LAST_ERROR
+//                                     */
+//                                    \Bitrix\Main\Diag\Debug::dumpToFile($contactEntity->LAST_ERROR, "contactEntity->LAST_ERROR","/log.txt");
+//                                    \Bitrix\Main\Diag\Debug::dumpToFile($contactFields['RESULT_MESSAGE'], "RESULT_MESSAGE","/log.txt");
+//                                }
                             }
                         }
                         break;
@@ -208,8 +388,8 @@ class Route
                 "CREATED_BY_ID" => "1",
                 "DATE_CREATE" => $deal['DATE_CREATE'],
                 "DATE_MODIFY" => $deal['DATE_MODIFY'],
-                "BEGINDATE" => $deal['BEGINDATE'],
-                "CLOSEDATE" => $deal['CLOSEDATE'],
+                //"BEGINDATE" => $deal['BEGINDATE'],
+                //"CLOSEDATE" => $deal['CLOSEDATE'],
                 "CLOSED" => $deal['CLOSED'],
                 "COMMENTS" => $deal['COMMENTS'],
                 "ADDITIONAL_INFO" => $deal['ADDITIONAL_INFO'],
@@ -232,6 +412,17 @@ class Route
             $options = ['CURRENT_USER' => 1]; //из под админа
             $deal2 = new \CCrmDeal(false);
             $dealId = $deal2->Add($arFields, true, $options);
+            if (!$dealId)
+            {
+                /**
+                 * Произошла ошибка при добавлении сущности, посмотреть ее можно
+                 * через любой из способов ниже:
+                 * 1. $entityFields['RESULT_MESSAGE']
+                 * 2. $entityObject->LAST_ERROR
+                 */
+                //\Bitrix\Main\Diag\Debug::dumpToFile($arFields['RESULT_MESSAGE'], "RESULT_MESSAGE", "/log.txt");
+                //\Bitrix\Main\Diag\Debug::dumpToFile($deal2->LAST_ERROR, "LAST_ERROR", "/log.txt");
+            }
         }
     }
 
